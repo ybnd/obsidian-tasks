@@ -411,11 +411,17 @@ session.
             if (heading.position.start.line > lineNumberTask) {
                 return precedingHeader;
             }
+
+            // todo: not every one of these is actually relevant
             precedingHeader = heading.heading
                 .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1')
                 .replace(/\[\[([^\]|]+)\]\]/g, '$1')
                 .replace(/💾/g, '')
                 .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+
+            if (heading.heading != precedingHeader) {
+                console.log(`Tasks plugin: transformed heading '${heading.heading}' → '${precedingHeader}'`);
+            }
         }
         return precedingHeader;
     }
