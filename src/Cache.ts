@@ -411,7 +411,10 @@ session.
             if (heading.position.start.line > lineNumberTask) {
                 return precedingHeader;
             }
-            precedingHeader = heading.heading;
+            precedingHeader = heading.heading
+                .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1')
+                .replace(/\[\[([^\]|]+)\]\]/g, '$1')
+                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
         }
         return precedingHeader;
     }
