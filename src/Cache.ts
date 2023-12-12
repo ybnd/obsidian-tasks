@@ -18,6 +18,8 @@ export enum State {
     Warm = 'Warm',
 }
 
+const converted_headings_cache = new Map();
+
 export class Cache {
     logger = logging.getLogger('tasks.Cache');
 
@@ -412,16 +414,27 @@ session.
                 return precedingHeader;
             }
 
-            // todo: not every one of these is actually relevant
-            precedingHeader = heading.heading
-                .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1')
-                .replace(/\[\[([^\]|]+)\]\]/g, '$1')
-                .replace(/💾/g, '')
-                .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+            if (!converted_headings_cache.has(heading.heading)) {
+                converted_headings_cache.set(
+                    heading.heading,
+                    heading.heading
+                        .replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1')
+                        .replace(/\[\[([^\]|]+)\]\]/g, '$1')
+                        .replace(/💾/g, '')
+                        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+                        .trim(),
+                );
 
-            if (heading.heading != precedingHeader) {
-                console.log(`Tasks plugin: transformed heading '${heading.heading}' → '${precedingHeader}'`);
+                if (heading.heading != converted_headings_cache.get(heading.heading)) {
+                    console.log(
+                        `Tasks plugin: transformed heading '${heading.heading}' → '${converted_headings_cache.get(
+                            heading.heading,
+                        )}'`,
+                    );
+                }
             }
+
+            precedingHeader = converted_headings_cache.get(heading.heading);
         }
         return precedingHeader;
     }
