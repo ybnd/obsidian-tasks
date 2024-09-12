@@ -11,7 +11,7 @@ import {
     expectTaskComparesBefore,
     expectTaskComparesEqual,
 } from '../../CustomMatchers/CustomMatchersForSorting';
-import { SampleTasks } from '../../TestHelpers';
+import { SampleTasks } from '../../TestingTools/SampleTasks';
 
 window.moment = moment;
 
@@ -112,10 +112,11 @@ describe('grouping by created date', () => {
         const tasks = SampleTasks.withAllRepresentativeCreatedDates();
 
         expect({ grouper, tasks }).groupHeadingsToBe([
+            '%%0%% Invalid created date',
             '2023-05-30 Tuesday',
             '2023-05-31 Wednesday',
             '2023-06-01 Thursday',
-            'Invalid date',
+            '2023-06-02 Friday',
             'No created date',
         ]);
     });

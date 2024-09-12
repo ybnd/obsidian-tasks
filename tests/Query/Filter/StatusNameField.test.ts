@@ -4,7 +4,8 @@ import {
     expectTaskComparesBefore,
     expectTaskComparesEqual,
 } from '../../CustomMatchers/CustomMatchersForSorting';
-import { SampleTasks, fromLine } from '../../TestHelpers';
+import { fromLine } from '../../TestingTools/TestHelpers';
+import { SampleTasks } from '../../TestingTools/SampleTasks';
 
 // Abbreviated names so that the markdown text is aligned
 const todoTask = fromLine({ line: '- [ ] Xxx' });
@@ -102,6 +103,6 @@ describe('grouping by status.name', () => {
         const grouper = new StatusNameField().createNormalGrouper();
         const tasks = SampleTasks.withAllStatuses();
 
-        expect({ grouper, tasks }).groupHeadingsToBe(['Cancelled', 'Done', 'EMPTY', 'In Progress', 'Todo']);
+        expect({ grouper, tasks }).groupHeadingsToBe(['Cancelled', 'Done', 'EMPTY', 'In Progress', 'Non-Task', 'Todo']);
     });
 });

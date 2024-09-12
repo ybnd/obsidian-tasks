@@ -1,5 +1,8 @@
 {
-  "theme": "moonstone",
-  "enabledCssSnippets": [],
+  "theme": "system",
+  "enabledCssSnippets": [
+    "tasks-code-block-blue-border",
+    "js-engine-code-block-border"
+  ],
   "accentColor": ""
 }

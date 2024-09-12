@@ -1,1 +1,5 @@
-![Add Alt Text here - this description will be read aloud by screen-reading software](../images/insert-filename-here.png)
+<%-*
+const caption = await tp.system.prompt("Caption for image");
+-%>
+![<%* tR += caption %>](../images/insert-filename-here.png)
+<span class="caption"><%* tR += caption %></span>

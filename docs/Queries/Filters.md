@@ -17,6 +17,7 @@ This page is long. Here are some links to the main sections:
 - [[#Text filters]]
 - [[#Matching multiple filters]]
 - [[#Filters for Task Statuses]]
+- [[#Filters for Task Dependencies]]
 - [[#Filters for Dates in Tasks]]
 - [[#Filters for Other Task Properties]]
 - [[#Filters for File Properties]]
@@ -450,6 +451,112 @@ Find any tasks that have status symbols you have not yet added to your Tasks set
     group by path
     ```
 
+## Filters for Task Dependencies
+
+At a high level, task dependencies define the order in which you want to work on a set of tasks. You can read more about them in [[Task Dependencies]].
+
+> [!released]
+> Task Dependencies were introduced in Tasks 6.1.0.
+
+### Blocking Tasks
+
+- `is blocking`
+  - This shows tasks that you probably want to do first, as they are preventing other tasks from being done.
+- `is not blocking`
+  - This shows tasks that are not preventing others from being done, so perhaps may be considered as lower priority.
+  - This would typically be used with `not done`.
+
+A task is treated as `blocking` if:
+
+- it has an `id` value,
+- at least one other task in the vault has that `id` value in its `dependsOn` list,
+- both tasks have status type `TODO` or `IN_PROGRESS`.
+
+For example:
+
+```text
+- [ ] I am blocking 🆔 12345
+- [ ] I am not blocking ⛔ 12345
+```
+
+Note also:
+
+- Only direct dependencies are considered.
+- Tasks with status type `DONE`, `CANCELLED` or `NON_TASK` are never treated as `blocking`.
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - `is blocking` and `is not blocking` were introduced in Tasks 6.1.0.
+
+### Blocked Tasks
+
+- `is blocked`
+  - This shows tasks you cannot currently do, as they are waiting for another task to be completed.
+- `is not blocked`
+  - This shows tasks that are not waiting for any other tasks to be completed.
+  - This would typically be used with `not done`.
+
+A task is treated as `blocked` if:
+
+- it has one or more `dependsOn` values,
+- its `dependsOn` list includes the id any tasks in the vault,
+- both tasks have status type `TODO` or `IN_PROGRESS`.
+
+For example:
+
+```text
+- [ ] I am not blocked 🆔 12345
+- [ ] I am blocked ⛔ 12345
+```
+
+Note also:
+
+- Only direct dependencies are considered.
+- Tasks with status type `DONE`, `CANCELLED` or `NON_TASK` are never treated as `blocked`.
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - `is blocked` and `is not blocked` were introduced in Tasks 6.1.0.
+
+### Id
+
+The `id` field adds an identifier to a task, so that other tasks may be marked as `dependsOn` that task.
+
+- `has id`
+- `no id`
+- `id (includes|does not include) <string>`
+  - Matches case-insensitive (disregards capitalization).
+- `id (regex matches|regex does not match) /<JavaScript-style Regex>/`
+  - Does regular expression match (case-sensitive by default).
+  - Essential reading: [[Regular Expressions|Regular Expression Searches]].
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - Task Id was introduced in Tasks 6.1.0.
+
+Since Tasks 6.1.0, **[[Custom Filters|custom filtering]] by Id** is now possible, using `task.id`.
+
+### Depends On
+
+The `dependsOn` field allows a task to be marked as depending on the `id` of one or more other tasks. Multiple `id` values are separated by commas (`,`) with no spaces.
+
+- `has depends on`
+- `no depends on`
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - Task Depends On was introduced in Tasks 6.1.0.
+
+Since Tasks 6.1.0, **[[Custom Filters|custom filtering]] by Depends On** is now possible, using `task.dependsOn`.
+
 ## Filters for Dates in Tasks
 
 ### Due Date
@@ -493,6 +600,15 @@ filter by function task.due.format('dddd') === 'Tuesday'
 For users who are comfortable with JavaScript, these more complicated examples may also be of interest:
 
 <!-- placeholder to force blank line before included text --><!-- include: CustomFilteringExamples.test.dates_task.due.advanced_docs.approved.md -->
+
+```javascript
+filter by function \
+    const date = task.due.moment; \
+    return date ? !date.isValid() : false;
+```
+
+- Like `due date is invalid`.
+- It matches tasks that have a due date and the due date is invalid, such as `2022-13-32`
 
 ```javascript
 filter by function task.due.moment?.isSameOrBefore(moment(), 'day') || false
@@ -697,6 +813,44 @@ filter by function task.created.format('dddd') === 'Monday'
 
 For more examples, see [[#Due Date]].
 
+### Cancelled Date
+
+- `no cancelled date`
+- `has cancelled date`
+- `cancelled (on|before|after|on or before|on or after) <date>`
+- `cancelled (in|before|after|in or before|in or after) <date range>`
+  - `YYYY-MM-DD YYYY-MM-DD`
+  - `(last|this|next) (week|month|quarter|year)`
+  - `(YYYY-Www|YYYY-mm|YYYY-Qq|YYYY)`
+- `cancelled date is invalid`
+
+For more information, see [[Dates#Cancelled date|Cancelled date]].
+
+Such a filter could be:
+
+    ```tasks
+    cancelled yesterday
+    ```
+
+> [!released]
+>
+> - Cancelled date was introduced in Tasks 5.5.0.
+
+Since Tasks 5.5.0, **[[Custom Filters|custom filtering]] by cancelled date** is now possible, using `task.cancelled`.
+
+<!-- placeholder to force blank line before included text --><!-- include: CustomFilteringExamples.test.dates_task.cancelled_docs.approved.md -->
+
+```javascript
+filter by function task.cancelled.format('dddd') === 'Wednesday'
+```
+
+- Find tasks cancelled on Wednesdays, that is, any Wednesday.
+- On non-English systems, you may need to supply the day of the week in the local language.
+
+<!-- placeholder to force blank line after included text --><!-- endInclude -->
+
+For more examples, see [[#Due Date]].
+
 ### Happens
 
 - `happens (on|before|after|on or before|on or after) <date>`
@@ -709,6 +863,8 @@ For more examples, see [[#Due Date]].
 For example, `happens before tomorrow` will return all tasks that are starting, scheduled, or due earlier than tomorrow.
 If a task starts today and is due in a week from today, `happens before tomorrow` will match,
 because the tasks starts before tomorrow. Only one of the dates needs to match.
+
+Invalid start, scheduled or due dates are ignored by `happens`.
 
 - `no happens date`
   - Return tasks where _none_ of start date, scheduled date, and due date are set.
@@ -761,9 +917,19 @@ Such tasks look like they have a date, but that date will never be found. When v
 
 Any such mistakes can be found systematically with this search:
 
-    ```tasks
-    (created date is invalid) OR (done date is invalid) OR (due date is invalid) OR (scheduled date is invalid) OR (start date is invalid)
-    ```
+<!-- include: ValidateTasks.test.validate-tasks_find_problem_dates.approved.text -->
+````text
+```tasks
+# These instructions need to be all on one line:
+(cancelled date is invalid) OR (created date is invalid) OR (done date is invalid) OR (due date is invalid) OR (scheduled date is invalid) OR (start date is invalid)
+
+# Optionally, uncomment this line and exclude your templates location
+# path does not include _templates
+
+group by path
+```
+````
+<!-- endInclude -->
 
 > [!warning]
 > If the above search finds any tasks with invalid dates, they are best fixed by clicking on the [[Backlinks|backlink]] to navigate

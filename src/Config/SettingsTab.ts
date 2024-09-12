@@ -1,10 +1,10 @@
 import { Notice, PluginSettingTab, Setting, debounce } from 'obsidian';
-import { StatusConfiguration, StatusType } from '../StatusConfiguration';
+import { StatusConfiguration, StatusType } from '../Statuses/StatusConfiguration';
 import type TasksPlugin from '../main';
-import { StatusRegistry } from '../StatusRegistry';
-import { Status } from '../Status';
-import type { StatusCollection } from '../StatusCollection';
-import { createStatusRegistryReport } from '../StatusRegistryReport';
+import { StatusRegistry } from '../Statuses/StatusRegistry';
+import { Status } from '../Statuses/Status';
+import type { StatusCollection } from '../Statuses/StatusCollection';
+import { createStatusRegistryReport } from '../Statuses/StatusRegistryReport';
 import * as Themes from './Themes';
 import { type HeadingState, TASK_FORMATS } from './Settings';
 import { getSettings, isFeatureEnabled, updateGeneralSetting, updateSettings } from './Settings';
@@ -199,12 +199,28 @@ export class SettingsTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
+            .setName('Set cancelled date on every cancelled task')
+            .setDesc(
+                SettingsTab.createFragmentWithHTML(
+                    'Enabling this will add a timestamp ❌ YYYY-MM-DD at the end when a task is toggled to cancelled.</br>' +
+                        '<p>See the <a href="https://publish.obsidian.md/tasks/Getting+Started/Dates#Cancelled+date">documentation</a>.</p>',
+                ),
+            )
+            .addToggle((toggle) => {
+                const settings = getSettings();
+                toggle.setValue(settings.setCancelledDate).onChange(async (value) => {
+                    updateSettings({ setCancelledDate: value });
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(containerEl)
             .setName('Use filename as Scheduled date for undated tasks')
             .setDesc(
                 SettingsTab.createFragmentWithHTML(
                     'Save time entering Scheduled (⏳) dates.</br>' +
                         'If this option is enabled, any undated tasks will be given a default Scheduled date extracted from their file name.</br>' +
-                        'The date in the file name must be in one of <code>YYYY-MM-DD</code> or <code>YYYYMMDD</code> formats.</br>' +
+                        'By default, Tasks plugin will match both <code>YYYY-MM-DD</code> and <code>YYYYMMDD</code> date formats.</br>' +
                         'Undated tasks have none of Due (📅 ), Scheduled (⏳) and Start (🛫) dates.</br>' +
                         '<p>See the <a href="https://publish.obsidian.md/tasks/Getting+Started/Use+Filename+as+Default+Date">documentation</a>.</p>',
                 ),
@@ -215,6 +231,25 @@ export class SettingsTab extends PluginSettingTab {
                     updateSettings({ useFilenameAsScheduledDate: value });
                     await this.plugin.saveSettings();
                 });
+            });
+
+        new Setting(containerEl)
+            .setName('Additional filename date format as Scheduled date for undated tasks')
+            .setDesc(
+                SettingsTab.createFragmentWithHTML(
+                    'An additional date format that Tasks plugin will recogize when using the file name as the Scheduled date for undated tasks.</br>' +
+                        '<p><a href="https://momentjs.com/docs/#/displaying/format/">Syntax Reference</a></p>',
+                ),
+            )
+            .addText((text) => {
+                const settings = getSettings();
+
+                text.setPlaceholder('example: MMM DD YYYY')
+                    .setValue(settings.filenameAsScheduledDateFormat)
+                    .onChange(async (value) => {
+                        updateSettings({ filenameAsScheduledDateFormat: value });
+                        await this.plugin.saveSettings();
+                    });
             });
 
         new Setting(containerEl)
@@ -299,7 +334,7 @@ export class SettingsTab extends PluginSettingTab {
             .addSlider((slider) => {
                 const settings = getSettings();
                 slider
-                    .setLimits(3, 12, 1)
+                    .setLimits(3, 20, 1)
                     .setValue(settings.autoSuggestMaxItems)
                     .setDynamicTooltip()
                     .onChange(async (value) => {
@@ -502,7 +537,7 @@ export class SettingsTab extends PluginSettingTab {
                     const fileContent = createStatusRegistryReport(statusSettings, statusRegistry, buttonName, version);
 
                     // Save the file
-                    const file = await app.vault.create(filename, fileContent);
+                    const file = await this.app.vault.create(filename, fileContent);
 
                     // And open the new file
                     const leaf = this.app.workspace.getLeaf(true);
@@ -561,6 +596,7 @@ export class SettingsTab extends PluginSettingTab {
             // Light and Dark themes - alphabetical order
             ['AnuPpuccin Theme', Themes.anuppuccinSupportedStatuses()],
             ['Aura Theme', Themes.auraSupportedStatuses()],
+            ['Border Theme', Themes.borderSupportedStatuses()],
             ['Ebullientworks Theme', Themes.ebullientworksSupportedStatuses()],
             ['ITS Theme & SlRvb Checkboxes', Themes.itsSupportedStatuses()],
             ['Minimal Theme', Themes.minimalSupportedStatuses()],

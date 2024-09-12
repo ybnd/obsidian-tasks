@@ -3,9 +3,12 @@
  */
 
 import moment from 'moment';
-import { Priority, Task, TaskRegularExpressions } from '../../src/Task';
+import { Task } from '../../src/Task/Task';
 import type { TaskDetails, TaskSerializer } from '../../src/TaskSerializer';
 import { TaskBuilder } from '../TestingTools/TaskBuilder';
+import { OnCompletion } from '../../src/Task/OnCompletion';
+import { Priority } from '../../src/Task/Priority';
+import { TaskRegularExpressions } from '../../src/Task/TaskRegularExpressions';
 
 jest.mock('obsidian');
 window.moment = moment;
@@ -68,7 +71,11 @@ describe('TaskSerializer Example', () => {
                 createdDate: null,
                 scheduledDate: null,
                 doneDate: null,
+                cancelledDate: null,
                 recurrence: null,
+                onCompletion: OnCompletion.Ignore,
+                dependsOn: [],
+                id: '',
             };
         }
 

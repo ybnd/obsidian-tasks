@@ -1,7 +1,7 @@
-import type { TaskLayout, TaskLayoutComponent } from '../TaskLayout';
-import type { Task } from '../Task';
-import { Priority } from '../Task';
-import { DefaultTaskSerializer } from './DefaultTaskSerializer';
+import { TaskLayoutComponent } from '../Layout/TaskLayoutOptions';
+import { Priority } from '../Task/Priority';
+import type { Task } from '../Task/Task';
+import { DefaultTaskSerializer, taskIdRegex, taskIdSequenceRegex } from './DefaultTaskSerializer';
 
 /**
  * Takes a regex of the form 'key:: value' and turns it into a regex that can parse
@@ -73,7 +73,11 @@ export const DATAVIEW_SYMBOLS = {
     scheduledDateSymbol: 'scheduled::',
     dueDateSymbol: 'due::',
     doneDateSymbol: 'completion::',
+    cancelledDateSymbol: 'cancelled::',
     recurrenceSymbol: 'repeat::',
+    onCompletionSymbol: 'onCompletion::',
+    idSymbol: 'id::',
+    dependsOnSymbol: 'dependsOn::',
     TaskFormatRegularExpressions: {
         priorityRegex: toInlineFieldRegex(/priority:: *(highest|high|medium|low|lowest)/),
         startDateRegex: toInlineFieldRegex(/start:: *(\d{4}-\d{2}-\d{2})/),
@@ -81,7 +85,11 @@ export const DATAVIEW_SYMBOLS = {
         scheduledDateRegex: toInlineFieldRegex(/scheduled:: *(\d{4}-\d{2}-\d{2})/),
         dueDateRegex: toInlineFieldRegex(/due:: *(\d{4}-\d{2}-\d{2})/),
         doneDateRegex: toInlineFieldRegex(/completion:: *(\d{4}-\d{2}-\d{2})/),
+        cancelledDateRegex: toInlineFieldRegex(/cancelled:: *(\d{4}-\d{2}-\d{2})/),
         recurrenceRegex: toInlineFieldRegex(/repeat:: *([a-zA-Z0-9, !]+)/),
+        onCompletionRegex: toInlineFieldRegex(/onCompletion:: *([a-zA-Z]+)/),
+        dependsOnRegex: toInlineFieldRegex(new RegExp('dependsOn:: *(' + taskIdSequenceRegex.source + ')')),
+        idRegex: toInlineFieldRegex(new RegExp('id:: *(' + taskIdRegex.source + ')')),
     },
 } as const;
 
@@ -111,9 +119,12 @@ export class DataviewTaskSerializer extends DefaultTaskSerializer {
         }
     }
 
-    public componentToString(task: Task, layout: TaskLayout, component: TaskLayoutComponent) {
-        const stringComponent = super.componentToString(task, layout, component);
-        const notInlineFieldComponents: TaskLayoutComponent[] = ['blockLink', 'description'];
+    public componentToString(task: Task, shortMode: boolean, component: TaskLayoutComponent) {
+        const stringComponent = super.componentToString(task, shortMode, component);
+        const notInlineFieldComponents: TaskLayoutComponent[] = [
+            TaskLayoutComponent.BlockLink,
+            TaskLayoutComponent.Description,
+        ];
         const shouldMakeInlineField = stringComponent !== '' && !notInlineFieldComponents.includes(component);
         return shouldMakeInlineField
             ? // Having 2 (TWO) leading spaces avoids a rendering issues that makes every other

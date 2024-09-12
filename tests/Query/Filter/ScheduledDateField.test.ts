@@ -5,7 +5,7 @@ import moment from 'moment';
 import { ScheduledDateField } from '../../../src/Query/Filter/ScheduledDateField';
 import { TaskBuilder } from '../../TestingTools/TaskBuilder';
 import { expectTaskComparesAfter, expectTaskComparesBefore } from '../../CustomMatchers/CustomMatchersForSorting';
-import { SampleTasks } from '../../TestHelpers';
+import { SampleTasks } from '../../TestingTools/SampleTasks';
 
 window.moment = moment;
 
@@ -63,10 +63,11 @@ describe('grouping by scheduled date', () => {
         const tasks = SampleTasks.withAllRepresentativeScheduledDates();
 
         expect({ grouper, tasks }).groupHeadingsToBe([
+            '%%0%% Invalid scheduled date',
             '2023-05-30 Tuesday',
             '2023-05-31 Wednesday',
             '2023-06-01 Thursday',
-            'Invalid date',
+            '2023-06-02 Friday',
             'No scheduled date',
         ]);
     });

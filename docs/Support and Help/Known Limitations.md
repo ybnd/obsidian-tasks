@@ -31,6 +31,10 @@ This page gathers together all the documentation on known limitations of the plu
 
 ![[Getting Started#Limitations and warnings]]
 
+## Writing Tasks: Dependencies
+
+![[Task Dependencies#Known Limitations]]
+
 ## Writing Tasks: Task Formats
 
 ![[About Task Formats#Limitations of task format support]]
@@ -47,9 +51,17 @@ This page gathers together all the documentation on known limitations of the plu
 
 ![[Use Filename as Default Date#Limitations]]
 
+## Editing Tasks: Auto-Suggest
+
+![[Auto-Suggest#Limitations of Auto-Suggest]]
+
 ## Editing Tasks: Create or edit Task
 
 ![[Create or edit Task#Known limitations]]
+
+## Editing Tasks: Postponing
+
+![[Postponing#Current Limitations]]
 
 ## Concepts: Recurring Tasks
 
@@ -67,6 +79,10 @@ This page gathers together all the documentation on known limitations of the plu
 
 ![[Regular Expressions#Known limitations]]
 
+## Queries: Custom Sorting
+
+![[Custom Sorting#Limitations of Custom Sorting]]
+
 ## Settings: Status Settings
 
 ![[Status Settings#Limitations and Issues]]
@@ -82,3 +98,7 @@ This page gathers together all the documentation on known limitations of the plu
 ## Advanced: Styling
 
 ![[Styling#Limitations of styling]]
+
+## Advanced: Urgency
+
+![[Urgency#Limitations of the Urgency Score]]

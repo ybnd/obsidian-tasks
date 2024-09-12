@@ -15,6 +15,7 @@ This page is long. Here are some links to the main sections:
 - [[#Basics]]
 - [[#Custom Groups]]
 - [[#Group by Task Statuses]]
+- [[#Group by Task Dependencies]]
 - [[#Group by Dates in Tasks]]
 - [[#Group by Other Task Properties]]
 - [[#Group by File Properties]]
@@ -162,12 +163,66 @@ group by function "Next status symbol: " + task.status.nextSymbol.replace(" ", "
 
 <!-- placeholder to force blank line after included text --><!-- endInclude -->
 
+## Group by Task Dependencies
+
+At a high level, task dependencies define the order in which you want to work on a set of tasks. You can read more about them in [[Task Dependencies]].
+
+> [!released]
+> Task Dependencies were introduced in Tasks 6.1.0.
+
+### Id
+
+- `group by id`
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - Task Id was introduced in Tasks 6.1.0.
+
+Since Tasks 6.1.0, **[[Custom Grouping|custom grouping]] by Id** is now possible, using `task.id`.
+
+<!-- placeholder to force blank line before included text --><!-- include: CustomGroupingExamples.test.dependencies_task.id_docs.approved.md -->
+
+```javascript
+group by function task.id
+```
+
+- Group by task Ids, if any.
+- Note that currently there is no way to access any tasks that are blocked by these Ids.
+
+<!-- placeholder to force blank line after included text --><!-- endInclude -->
+
+### Depends On
+
+There is no built-in instruction to group by 'Depends On'.
+
+For more information, see [[Task Dependencies]].
+
+> [!released]
+>
+> - Task Depends On was introduced in Tasks 6.1.0.
+
+Since Tasks 6.1.0, **[[Custom Grouping|custom grouping]] by Depends On** is now possible, using `task.dependsOn`.
+
+<!-- placeholder to force blank line before included text --><!-- include: CustomGroupingExamples.test.dependencies_task.dependsOn_docs.approved.md -->
+
+```javascript
+group by function task.dependsOn
+```
+
+- Group by the Ids of the tasks that each task depends on, if any.
+- If a task depends on more than one other task, it will be listed multiple times.
+- Note that currently there is no way to access the tasks being depended on.
+
+<!-- placeholder to force blank line after included text --><!-- endInclude -->
+
 ## Group by Dates in Tasks
 
 ### Due Date
 
 - `group by due`
-  - The due date of the task, including the week-day, or `No due date`.
+  - The due date of the task, including the week-day, or `Invalid due date` or `No due date`.
 
 > [!released]
 >
@@ -185,7 +240,7 @@ Some of these examples use the [moment.js format characters](https://momentjs.co
 group by function task.due.category.groupText
 ```
 
-- Group task due dates in to 4 broad categories: `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
+- Group task due dates in to 5 broad categories: `Invalid date`, `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
 - Try this on a line before `group by due` if there are a lot of due date headings, and you would like them to be broken down in to some kind of structure.
 - The values `task.due.category.name` and `task.due.category.sortOrder` are also available.
 
@@ -194,7 +249,7 @@ group by function task.due.fromNow.groupText
 ```
 
 - Group by the [time from now](https://momentjs.com/docs/#/displaying/fromnow/), for example `8 days ago`, `in 11 hours`.
-- It users an empty string (so no heading) if there is no due date.
+- It uses an empty string (so no heading) if there is no due date.
 - The values `task.due.fromNow.name` and `task.due.fromNow.sortOrder` are also available.
 
 ```javascript
@@ -281,14 +336,15 @@ group by function                                   \
 group by function \
     const date = task.due.moment; \
     return \
-        (!date)                           ? '%%4%% Undated' : \
-        date.isBefore(moment(), 'day')    ? '%%1%% Overdue' : \
-        date.isSame(moment(), 'day')      ? '%%2%% Today'   : \
+        (!date)                           ? '%%4%% Undated' :      \
+        !date.isValid()                   ? '%%0%% Invalid date' : \
+        date.isBefore(moment(), 'day')    ? '%%1%% Overdue' :      \
+        date.isSame(moment(), 'day')      ? '%%2%% Today'   :      \
         '%%3%% Future';
 ```
 
 - This gives exactly the same output as `group by function task.due.category.groupText`, and is shown here in case you want to customise the behaviour in some way.
-- Group task due dates in to 4 broad categories: `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
+- Group task due dates in to 5 broad categories: `Invalid date`, `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
 - Try this on a line before `group by due` if there are a lot of due date headings, and you would like them to be broken down in to some kind of structure.
 - Note that because we use variables to avoid repetition of values, we need to add `return`
 
@@ -296,13 +352,14 @@ group by function \
 group by function \
     const date = task.due.moment; \
     return \
-        (!date)                           ? '%%4%% ==Undated==' : \
-        date.isBefore(moment(), 'day')    ? '%%1%% ==Overdue==' : \
-        date.isSame(moment(), 'day')      ? '%%2%% ==Today=='   : \
+        (!date)                           ? '%%4%% ==Undated==' :      \
+        !date.isValid()                   ? '%%0%% ==Invalid date==' : \
+        date.isBefore(moment(), 'day')    ? '%%1%% ==Overdue==' :      \
+        date.isSame(moment(), 'day')      ? '%%2%% ==Today=='   :      \
         '%%3%% ==Future==';
 ```
 
-- As above, but the headings `Overdue`, `Today`, `Future` and `Undated` are highlighted.
+- As above, but the headings `Invalid date`, `Overdue`, `Today`, `Future` and `Undated` are highlighted.
 - See the sample screenshot below.
 
 ```javascript
@@ -311,12 +368,29 @@ group by function \
     const now = moment(); \
     const label = (order, name) => `%%${order}%% ==${name}==`; \
     if (!date)                      return label(4, 'Undated'); \
+    if (!date.isValid())            return label(0, 'Invalid date'); \
     if (date.isBefore(now, 'day'))  return label(1, 'Overdue'); \
     if (date.isSame(now, 'day'))    return label(2, 'Today'); \
     return label(3, 'Future');
 ```
 
 - As above, but using a local function, and `if` statements.
+
+```javascript
+group by function \
+    const date = task.due.moment; \
+    const tomorrow  = moment().add(1,'days'); \
+    const now = moment(); \
+    const label = (order, name) => `%%${order}%% ==${name}==`; \
+    if (!date)                           return label(5, 'Undated'); \
+    if (!date.isValid())                 return label(0, 'Invalid date'); \
+    if (date.isBefore(now, 'day'))       return label(1, 'Overdue'); \
+    if (date.isSame(now, 'day'))         return label(2, 'Today'); \
+    if (date.isSame(tomorrow, 'day'))    return label(3, 'Tomorrow'); \
+    return label(4, 'Future');
+```
+
+- As above, but adds a heading for Tomorrow.
 
 <!-- placeholder to force blank line after included text --><!-- endInclude -->
 
@@ -327,7 +401,7 @@ Sample image showing tasks grouped first by highlighted words `Overdue`, `Today`
 ### Done Date
 
 - `group by done`
-  - The done date of the task, including the week-day, or `No done date`.
+  - The done date of the task, including the week-day, or `Invalid done date` or `No done date`.
 
 > [!released]
 >
@@ -350,7 +424,7 @@ For more examples, see [[#Due Date]].
 ### Scheduled Date
 
 - `group by scheduled`
-  - The scheduled date of the task, including the week-day, or `No scheduled date`.
+  - The scheduled date of the task, including the week-day, or `Invalid scheduled date` or `No scheduled date`.
 
 > [!released]
 >
@@ -373,7 +447,7 @@ For more examples, see [[#Due Date]].
 ### Start Date
 
 - `group by start`
-  - The start date of the task, including the week-day, or `No start date`.
+  - The start date of the task, including the week-day, or `Invalid start date` or `No start date`.
 
 > [!released]
 >
@@ -396,7 +470,7 @@ For more examples, see [[#Due Date]].
 ### Created Date
 
 - `group by created`
-  - The created date of the task, including the week-day, or `No created date`.
+  - The created date of the task, including the week-day, or `Invalid created date` or `No created date`.
 
 > [!released]
 `created` grouping option was introduced in Tasks 2.0.0.
@@ -410,6 +484,28 @@ group by function task.created.format("YYYY-MM-DD dddd")
 ```
 
 - Like "group by created", except it uses an empty string instead of "No created date" if there is no created date.
+
+<!-- placeholder to force blank line after included text --><!-- endInclude -->
+
+For more examples, see [[#Due Date]].
+
+### Cancelled Date
+
+- `group by cancelled`
+  - The cancelled date of the task, including the week-day, or `Invalid cancelled date` or `No cancelled date`.
+
+> [!released]
+`cancelled` grouping option was introduced in Tasks 5.5.0.
+
+Since Tasks 5.5.0, **[[Custom Grouping|custom grouping]] by cancelled date** is now possible, using `task.cancelled`.
+
+<!-- placeholder to force blank line before included text --><!-- include: CustomGroupingExamples.test.dates_task.cancelled_docs.approved.md -->
+
+```javascript
+group by function task.cancelled.format("YYYY-MM-DD dddd")
+```
+
+- Like "group by cancelled", except it uses an empty string instead of "No cancelled date" if there is no cancelled date.
 
 <!-- placeholder to force blank line after included text --><!-- endInclude -->
 
@@ -746,7 +842,7 @@ Since Tasks 4.0.0, **[[Custom Grouping|custom grouping]] by file path** is now p
 group by function task.file.path
 ```
 
-- Like 'group by path' but includes the file extension.
+- Like 'group by path' but includes the file extension, and does not escape any Markdown formatting characters in the path.
 
 ```javascript
 group by function task.file.path.replace(query.file.folder, '')
@@ -779,7 +875,7 @@ Since Tasks 4.0.0, **[[Custom Grouping|custom grouping]] by root folder** is now
 group by function task.file.root
 ```
 
-- Same as 'group by root'.
+- Like 'group by root' except that it does not escape any Markdown formatting characters in the root.
 
 <!-- placeholder to force blank line after included text --><!-- endInclude -->
 
@@ -800,7 +896,7 @@ Since Tasks 4.0.0, **[[Custom Grouping|custom grouping]] by folder** is now poss
 group by function task.file.folder
 ```
 
-- Same as 'group by folder'.
+- Like 'group by folder', except that it does not escape any Markdown formatting characters in the folder.
 
 ```javascript
 group by function task.file.folder.slice(0, -1).split('/').pop() + '/'
@@ -883,7 +979,7 @@ Each subsequent `group by` will generate a new heading-level within the existing
 - Second `group by` is displayed as `h5` headings
 - Third and subsequent `group by` are displayed as `h6` headings
 
-See the [screenshots below](#screenshots) for how this looks in practice.
+See the [[#Screenshots|screenshots below]] for how this looks in practice.
 
 > [!info]
 > Headings are displayed in case-sensitive alphabetical order, not the original order.

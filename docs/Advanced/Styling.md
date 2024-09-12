@@ -50,18 +50,128 @@ The Tasks plugin renders a task in the following structure (this refers to query
           - Internal span
         - Task created date (span class="task-created" + data-task-created attribute)
           - Internal span
-        - ... start date, scheduled date, due date and done date in this order
-      - Task extras (link, edit button) (span class="task-extras")
+        - ... start date, scheduled date, due date, cancelled date and done date in this order
+      - Task extras (link, edit button, postpone button) (span class="task-extras")
   - Tasks count (div class="tasks-count")
 ```
 
 As can be seen above, the basic task `li` contains a checkbox and a content span.
-The content span contains a list of **component** spans: description, priority, recurrence, created date, start date, scheduled date, due date and done date in this order.
+The content span contains a list of **component** spans: description, priority, recurrence, created date, start date, scheduled date, due date, cancelled date and done date in this order.
 
 Each component span is marked with a **generic class**, which denotes the type of the component, and in some cases a **data attribute** that represents the component's content itself.
 
 Within each component span there is an additional "internal" span, which is the one holding the actual component text.
 The reason for this additional internal span is that it allows CSS styles that closely wrap the text itself, rather than its container box, e.g. for the purpose of drawing a highlight or a box that is exactly in the size of the text.
+
+### Sample HTML: Full mode
+
+To help visualise the structure above, here is the HTML for a sample task shown in [[Layout#Full Mode|full mode]].
+
+> [!Note]
+> The below does not (yet) show the "Task extras".
+
+<!-- snippet: TaskLineRenderer.test.Visualise_HTML_Full_task_-_full_mode.approved.html -->
+```html
+<!--
+  - [ ] Do exercises #todo #health 🆔 abcdef ⛔ 123456,abc123 🔼 🔁 every day when done 🏁 delete ➕ 2023-07-01 🛫 2023-07-02 ⏳ 2023-07-03 📅 2023-07-04 ❌ 2023-07-06 ✅ 2023-07-05 ^dcf64c
+-->
+
+<li
+  class="task-list-item plugin-tasks-list-item"
+  data-task-priority="medium"
+  data-task-created="past-4d"
+  data-task-start="past-3d"
+  data-task-scheduled="past-2d"
+  data-task-due="past-1d"
+  data-task-cancelled="future-1d"
+  data-task-done="today"
+  data-task=""
+  data-line="0"
+  data-task-status-name="Todo"
+  data-task-status-type="TODO">
+  <input class="task-list-item-checkbox" type="checkbox" title="Right-click for options" data-line="0" />
+  <span class="tasks-list-text">
+    <span class="task-description"><span>Do exercises #todo #health</span></span>
+    <span class="task-id"><span>🆔 abcdef</span></span>
+    <span class="task-dependsOn"><span>⛔ 123456,abc123</span></span>
+    <span class="task-priority" data-task-priority="medium"><span>🔼</span></span>
+    <span class="task-recurring"><span>🔁 every day when done</span></span>
+    <span class="task-onCompletion"><span>🏁 delete</span></span>
+    <span class="task-created" data-task-created="past-4d" title="Right-click to edit created date">
+      <span>➕ 2023-07-01</span>
+    </span>
+    <span class="task-start" data-task-start="past-3d" title="Right-click to edit start date">
+      <span>🛫 2023-07-02</span>
+    </span>
+    <span class="task-scheduled" data-task-scheduled="past-2d" title="Right-click to edit scheduled date">
+      <span>⏳ 2023-07-03</span>
+    </span>
+    <span class="task-due" data-task-due="past-1d" title="Right-click to edit due date">
+      <span>📅 2023-07-04</span>
+    </span>
+    <span class="task-cancelled" data-task-cancelled="future-1d" title="Right-click to edit cancelled date">
+      <span>❌ 2023-07-06</span>
+    </span>
+    <span class="task-done" data-task-done="today" title="Right-click to edit done date">
+      <span>✅ 2023-07-05</span>
+    </span>
+    <span class="task-block-link"><span>^dcf64c</span></span>
+  </span>
+</li>
+```
+<!-- endSnippet -->
+
+### Sample HTML: Short mode
+
+Here is the same task in [[Layout#Short Mode|short mode]]. The only difference is that any text values after Tasks emoji are omitted:
+
+> [!Note]
+> The below does not (yet) show the "Task extras".
+>
+<!-- snippet: TaskLineRenderer.test.Visualise_HTML_Full_task_-_short_mode.approved.html -->
+```html
+<!--
+  - [ ] Do exercises #todo #health 🆔 abcdef ⛔ 123456,abc123 🔼 🔁 every day when done 🏁 delete ➕ 2023-07-01 🛫 2023-07-02 ⏳ 2023-07-03 📅 2023-07-04 ❌ 2023-07-06 ✅ 2023-07-05 ^dcf64c
+-->
+
+<li
+  class="task-list-item plugin-tasks-list-item"
+  data-task-priority="medium"
+  data-task-created="past-4d"
+  data-task-start="past-3d"
+  data-task-scheduled="past-2d"
+  data-task-due="past-1d"
+  data-task-cancelled="future-1d"
+  data-task-done="today"
+  data-task=""
+  data-line="0"
+  data-task-status-name="Todo"
+  data-task-status-type="TODO">
+  <input class="task-list-item-checkbox" type="checkbox" title="Right-click for options" data-line="0" />
+  <span class="tasks-list-text">
+    <span class="task-description"><span>Do exercises #todo #health</span></span>
+    <span class="task-id"><span>🆔</span></span>
+    <span class="task-dependsOn"><span>⛔</span></span>
+    <span class="task-priority" data-task-priority="medium"><span>🔼</span></span>
+    <span class="task-recurring"><span>🔁</span></span>
+    <span class="task-onCompletion"><span>🏁</span></span>
+    <span class="task-created" data-task-created="past-4d" title="Right-click to edit created date">
+      <span>➕</span>
+    </span>
+    <span class="task-start" data-task-start="past-3d" title="Right-click to edit start date"><span>🛫</span></span>
+    <span class="task-scheduled" data-task-scheduled="past-2d" title="Right-click to edit scheduled date">
+      <span>⏳</span>
+    </span>
+    <span class="task-due" data-task-due="past-1d" title="Right-click to edit due date"><span>📅</span></span>
+    <span class="task-cancelled" data-task-cancelled="future-1d" title="Right-click to edit cancelled date">
+      <span>❌</span>
+    </span>
+    <span class="task-done" data-task-done="today" title="Right-click to edit done date"><span>✅</span></span>
+    <span class="task-block-link"><span>^dcf64c</span></span>
+  </span>
+</li>
+```
+<!-- endSnippet -->
 
 ## Generic Classes and Data Attributes
 
@@ -79,8 +189,11 @@ The generic classes are:
 - `task-created`
 - `task-start`
 - `task-scheduled`
+- `task-cancelled`
 - `task-done`
 - `task-recurring`
+- `task-id`
+- `task-dependsOn`
 
 In addition to the generic classes, there are [**data attributes**](https://developer.mozilla.org/en-US/docs/Learn/HTML/Howto/Use_data_attributes) that represent the content of the various task components.
 
@@ -89,7 +202,7 @@ The `normal` value is special: it is added as a default to a task's upper `task-
 
 <!-- NEW_TASK_FIELD_EDIT_REQUIRED -->
 A **date attribute** represents a due, created, start, scheduled or done date in a format relative to the current date.
-The date attributes are `data-task-due`, `data-task-created`, `data-task-start`, `data-task-scheduled` and `data-task-done` and are populated with a relative expression that denotes the number of days this field represents compared to today:
+The date attributes are `data-task-due`, `data-task-created`, `data-task-start`, `data-task-scheduled`, `data-task-cancelled` and `data-task-done` and are populated with a relative expression that denotes the number of days this field represents compared to today:
 
 - `data-task-due="today"` (or `data-task-start="today"`, `data-task-start="today"` etc) represents today.
 - `data-task-due="future-1d"` (or `data-task-start="future-1d"`) represents 1 day in the future, i.e. tomorrow.
@@ -120,6 +233,10 @@ The CSS `:has` selector is available with Obsidian installer version 1.1.9 and n
 
 **Grouping rules** will add a `data-task-group-by` attribute to the query container, e.g. `data-task-group-by="due,scheduled"`.
 
+## Buttons
+
+See [[How to style buttons]] for a variety of ways to style the Edit and Postpone buttons in Tasks query results.
+
 ## Custom Statuses
 
 Task statuses are represented by a few data attributes, all set on the `task-list-item` `LI` element:
@@ -133,7 +250,7 @@ These attributes can be used to style tasks according to their status, with the 
 ## Limitations of styling
 
 - The CSS classes and data attributes described here are **not available for markdown in Source and Live Preview modes**.
-- Specifically. the CSS classes described here are applied to:
+- Specifically, the CSS classes described here are applied to:
   - Reading mode,
   - Tasks query blocks in Reading and Live Preview modes.
 - Styles **cannot access any automatic scheduled date** that is created if the [[Use Filename as Default Date]]  option is enabled.
@@ -146,14 +263,18 @@ The following additional components have the following classes:
 | Class                          | Usage                                                                                                           |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
 | plugin-tasks-query-explanation | This is applied to the PRE showing the query's explanation when the `explain` instruction is used.              |
-| tasks-backlink                 | This is applied to the SPAN that wraps the [[Backlinks|backlink]] if displayed on the task.                                   |
+| tasks-backlink                 | This is applied to the SPAN that wraps the [[Backlinks\|backlink]] if displayed on the task.                    |
 | tasks-edit                     | This is applied to the SPAN that wraps the edit button/icon shown next to the task that opens the task edit UI. |
+| tasks-postpone                 | This is applied to the SPAN that wraps the postpone button/icon shown after the edit button/icon                |
 | tasks-urgency                  | This is applied to the SPAN that wraps the urgency score if displayed on the task.                              |
 | tasks-group-heading            | This is applied to H4, H5 and H6 group headings                                                                 |
 
 > [!released]
-`tasks-group-heading` was introduced in Tasks 1.6.0.<br>
-`plugin-tasks-query-explanation` was introduced in Tasks 1.19.0.
+>
+> - `tasks-group-heading` was introduced in Tasks 1.6.0.
+> - `plugin-tasks-query-explanation` was introduced in Tasks 1.19.0.
+> - `tasks-postpone` was added in Tasks 5.3.0.
+> - Styling of the Edit and Postpone buttons was changed in Tasks 6.0.0: see [[How to style buttons]].
 
 ## CSS Examples
 
@@ -373,7 +494,7 @@ The following organizes the task structure into a 3-line grid, on which:
 
 - the description is in the first line,
 - and the various components are on the second,
-- the urgency, backlink and edit button are, if displayed, on the third.
+- the urgency, backlink, edit and postpone buttons are, if displayed, on the third.
 
 <!-- snippet: resources/sample_vaults/Tasks-Demo/.obsidian/snippets/tasks-plugin-grid-layout.css -->
 ```css

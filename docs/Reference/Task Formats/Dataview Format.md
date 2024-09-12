@@ -61,18 +61,18 @@ The brackets `[]` and `()` differ in how [Dataview displays them](https://blacks
 > - Separating each field with at least 2 spaces.
 >
 > > [!example]
->   >
->   > ```text
->   >  - [ ] This is a task [priority:: high]  [start:: 2023-04-24]  [due:: 2023-05-01]
->   >  ```
+> >
+> > ```text
+> >  - [ ] This is a task [priority:: high]  [start:: 2023-04-24]  [due:: 2023-05-01]
+> >  ```
 >
 > - Separating each field with commas.
 >
 > > [!example]
->   >
->   > ```text
->   >  - [ ] This is a task [priority:: high], [start:: 2023-04-24], [due:: 2023-05-01]
->   > ```
+> >
+> > ```text
+> >  - [ ] This is a task [priority:: high], [start:: 2023-04-24], [due:: 2023-05-01]
+> > ```
 
 ## Supported dataview fields
 
@@ -89,13 +89,16 @@ These samples demonstrate all the fields supported by the Tasks plugin's parsing
 
 These names agree with the same fields in [dataview's documentation](https://blacksmithgu.github.io/obsidian-dataview/annotation/metadata-tasks/#field-shorthands).
 
-```markdown
-- [ ] #task Has a created date [created:: 2023-04-17]
-- [ ] #task Has a scheduled date [scheduled:: 2023-04-14]
-- [ ] #task Has a start date [start:: 2023-04-15]
-- [ ] #task Has a due date [due:: 2023-04-16]
-- [x] #task Has a done date [completion:: 2023-04-17]
+<!-- snippet: DocsSamplesForTaskFormats.test.Serializer_Dates_dataview-snippet.approved.md -->
+```md
+- [ ] #task Has a created date  [created:: 2023-04-13]
+- [ ] #task Has a scheduled date  [scheduled:: 2023-04-14]
+- [ ] #task Has a start date  [start:: 2023-04-15]
+- [ ] #task Has a due date  [due:: 2023-04-16]
+- [x] #task Has a done date  [completion:: 2023-04-17]
+- [-] #task Has a cancelled date  [cancelled:: 2023-04-18]
 ```
+<!-- endSnippet -->
 
 For more information, see [[Dates]].
 
@@ -128,6 +131,30 @@ For more information, see [[Priority]].
 
 For more information, see [[Recurring Tasks]].
 
+### Dataview Format for OnCompletion
+
+<!-- snippet: DocsSamplesForTaskFormats.test.Serializer_OnCompletion_dataview-snippet.approved.md -->
+```md
+- [ ] #task Keep this task when done
+- [ ] #task Keep this task when done too  [onCompletion:: keep]
+- [ ] #task Remove this task when done  [onCompletion:: delete]
+- [ ] #task Remove completed instance of this recurring task when done  [repeat:: every day]  [onCompletion:: delete]
+```
+<!-- endSnippet -->
+
+For more information, see [[On Completion]].
+
+### Dataview Format for Dependencies
+
+<!-- snippet: DocsSamplesForTaskFormats.test.Serializer_Dependencies_dataview-snippet.approved.md -->
+```md
+- [ ] #task do this first  [id:: dcf64c]
+- [ ] #task do this after first and some other task  [dependsOn:: dcf64c,0h17ye]
+```
+<!-- endSnippet -->
+
+For more information, see [[Task Dependencies]].
+
 ## Auto-Suggest and Dataview format
 
 The Dataview format fully supports Tasks' [[Auto-Suggest]] feature, but requires users to manually type out surrounding brackets (`[]` or `()`).  This works best with `Settings > Editor > Autopair Brackets` enabled.
@@ -138,7 +165,7 @@ Since Tasks 4.6.1, the Auto-Suggest menu *only* appears between square brackets 
 
 Essential reading:
 
-- [[About Task Formats#Impact of non-default formats on Tasks behaviour]]
+- [[About Task Formats#Impact of non-default task formats on Tasks behaviour]]
 - [[About Task Formats#Limitations of task format support]]
 
 Additional limitations, compared to the Dataview's own parsing of task lines:

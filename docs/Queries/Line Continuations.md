@@ -31,14 +31,21 @@ explain
 ```text
 Explanation of this Tasks code block query:
 
-(priority is highest) OR (priority is lowest) =>
-  OR (At least one of):
-    priority is highest
-    priority is lowest
+  (priority is highest) OR       \
+      (priority is lowest)
+   =>
+  (priority is highest) OR (priority is lowest) =>
+    OR (At least one of):
+      priority is highest
+      priority is lowest
+
+  No grouping instructions supplied.
+
+  No sorting instructions supplied.
 ```
 <!-- endSnippet -->
 
-This facility will be helpful for long [[Combining Filters]], [[Custom Filters]], and [[Custom Grouping]] lines, and other queries that may be difficult to read on one line.
+This facility will be helpful for long [[Combining Filters]], [[Custom Sorting]], and [[Custom Grouping]] lines, and other queries that may be difficult to read on one line.
 
 There are some more realistic examples towards the end of the [[Grouping#Due Date|Due date custom grouping examples]].
 
@@ -72,7 +79,12 @@ explain
 ```text
 Explanation of this Tasks code block query:
 
-description includes \
+  description includes \\ =>
+  description includes \
+
+  No grouping instructions supplied.
+
+  No sorting instructions supplied.
 ```
 <!-- endSnippet -->
 

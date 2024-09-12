@@ -40,12 +40,12 @@ The available task properties are also shown in the [[Quick Reference]] table.
 
 ### Available Query Properties
 
-The Reference section [[Query Properties]] shows all the query properties available for use via [[Placeholders]] in custom grouping.
-
-Any placeholders in custom groups must be surrounded by quotes.
+The Reference section [[Query Properties]] shows all the query properties available for in custom grouping.
 
 > [!released]
-> Query properties and placeholders were introduced in Tasks 4.7.0.
+>
+> - Query properties and placeholders were introduced in Tasks 4.7.0.
+> - Direct access to Query properties was introduced in Tasks 5.1.0.
 
 ### Expressions
 
@@ -127,7 +127,7 @@ group by function task.description.replace('short', '==short==')
 group by function task.due.category.groupText
 ```
 
-- Group task due dates in to 4 broad categories: `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
+- Group task due dates in to 5 broad categories: `Invalid date`, `Overdue`, `Today`, `Future` and `Undated`, displayed in that order.
 - Try this on a line before `group by due` if there are a lot of due date headings, and you would like them to be broken down in to some kind of structure.
 - The values `task.due.category.name` and `task.due.category.sortOrder` are also available.
 
@@ -136,7 +136,7 @@ group by function task.due.fromNow.groupText
 ```
 
 - Group by the [time from now](https://momentjs.com/docs/#/displaying/fromnow/), for example `8 days ago`, `in 11 hours`.
-- It users an empty string (so no heading) if there is no due date.
+- It uses an empty string (so no heading) if there is no due date.
 - The values `task.due.fromNow.name` and `task.due.fromNow.sortOrder` are also available.
 
 ```javascript
@@ -203,7 +203,7 @@ group by function task.urgency.toFixed(3)
 group by function task.file.folder
 ```
 
-- Same as 'group by folder'.
+- Like 'group by folder', except that it does not escape any Markdown formatting characters in the folder.
 
 ```javascript
 group by function task.file.folder.slice(0, -1).split('/').pop() + '/'

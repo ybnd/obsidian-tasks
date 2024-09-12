@@ -1,4 +1,4 @@
-import type { Task } from '../Task';
+import type { Task } from '../Task/Task';
 
 type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 
@@ -19,7 +19,11 @@ export type TaskDetails = Writeable<
         | 'scheduledDate'
         | 'dueDate'
         | 'doneDate'
+        | 'cancelledDate'
         | 'recurrence'
+        | 'onCompletion'
+        | 'dependsOn'
+        | 'id'
         | 'tags'
     >
 >;

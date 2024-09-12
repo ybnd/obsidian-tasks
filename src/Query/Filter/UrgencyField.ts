@@ -1,6 +1,6 @@
-import type { Comparator } from '../Sorter';
-import type { Task } from '../../Task';
-import type { Grouper, GrouperFunction } from '../Grouper';
+import type { Comparator } from '../Sort/Sorter';
+import type { Task } from '../../Task/Task';
+import type { Grouper, GrouperFunction } from '../Group/Grouper';
 import { Field } from './Field';
 import { FilterOrErrorMessage } from './FilterOrErrorMessage';
 
@@ -69,5 +69,9 @@ export class UrgencyField extends Field {
      */
     public createGrouper(reverse: boolean): Grouper {
         return super.createGrouper(!reverse);
+    }
+
+    protected grouperInstruction(reverse: boolean) {
+        return super.grouperInstruction(!reverse);
     }
 }

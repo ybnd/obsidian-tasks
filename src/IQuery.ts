@@ -1,6 +1,7 @@
-import type { LayoutOptions } from './TaskLayout';
-import type { Task } from './Task';
-import type { Grouper } from './Query/Grouper';
+import type { TaskLayoutOptions } from './Layout/TaskLayoutOptions';
+import type { QueryLayoutOptions } from './Layout/QueryLayoutOptions';
+import type { Task } from './Task/Task';
+import type { Grouper } from './Query/Group/Grouper';
 import type { QueryResult } from './Query/QueryResult';
 
 /**
@@ -43,10 +44,19 @@ export interface IQuery {
      * Any layout options the query engine should be aware of or
      * used in the query.
      *
-     * @type {LayoutOptions}
+     * @type {TaskLayoutOptions}
      * @memberof IQuery
      */
-    layoutOptions: LayoutOptions;
+    taskLayoutOptions: TaskLayoutOptions;
+
+    /**
+     * Any layout options the query engine should be aware of or
+     * used in the query.
+     *
+     * @type {QueryLayoutOptions}
+     * @memberof IQuery
+     */
+    queryLayoutOptions: QueryLayoutOptions;
 
     /**
      * Main method for executing the query. This will be called by the
@@ -67,6 +77,11 @@ export interface IQuery {
      * This is currently displayed as a <pre> block, retaining indentation.
      */
     explainQuery: () => string;
+
+    /**
+     * A probably unique identifier for this query, typically for use in debug logging
+     */
+    readonly queryId: string;
 
     /**
      * Write a debug log message.

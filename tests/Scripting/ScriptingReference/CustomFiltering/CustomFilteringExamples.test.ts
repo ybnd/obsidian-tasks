@@ -3,15 +3,18 @@
  */
 
 import moment from 'moment';
-import type { Task } from '../../../../src/Task';
-import { SampleTasks, fromLine, fromLines } from '../../../TestHelpers';
+import type { Task } from '../../../../src/Task/Task';
+import { allCacheSampleData } from '../../../Obsidian/AllCacheSampleData';
+import { type SimulatedFile, readTasksFromSimulatedFile } from '../../../Obsidian/SimulatedFile';
+import { fromLine, fromLines } from '../../../TestingTools/TestHelpers';
+import { SampleTasks } from '../../../TestingTools/SampleTasks';
 import type { CustomPropertyDocsTestData, QueryInstructionLineAndDescription } from '../VerifyFunctionFieldSamples';
 import {
     verifyFunctionFieldFilterSamplesForDocs,
     verifyFunctionFieldFilterSamplesOnTasks,
 } from '../VerifyFunctionFieldSamples';
-import { StatusRegistry } from '../../../../src/StatusRegistry';
-import { StatusConfiguration } from '../../../../src/StatusConfiguration';
+import { StatusRegistry } from '../../../../src/Statuses/StatusRegistry';
+import { StatusConfiguration } from '../../../../src/Statuses/StatusConfiguration';
 
 window.moment = moment;
 
@@ -31,6 +34,18 @@ describe('dates', () => {
         // ---------------------------------------------------------------------------------
         // DATE FIELDS
         // ---------------------------------------------------------------------------------
+
+        [
+            'task.cancelled',
+            [
+                [
+                    "filter by function task.cancelled.format('dddd') === 'Wednesday'",
+                    'Find tasks cancelled on Wednesdays, that is, any Wednesday.',
+                    'On non-English systems, you may need to supply the day of the week in the local language',
+                ],
+            ],
+            SampleTasks.withAllRepresentativeCancelledDates(),
+        ],
 
         [
             'task.created',
@@ -71,6 +86,14 @@ describe('dates', () => {
         [
             'task.due.advanced',
             [
+                [
+                    // comment to force line break
+                    `filter by function \\
+    const date = task.due.moment; \\
+    return date ? !date.isValid() : false;`,
+                    'Like `due date is invalid`.',
+                    'It matches tasks that have a due date and the due date is invalid, such as `2022-13-32`',
+                ],
                 [
                     "filter by function task.due.moment?.isSameOrBefore(moment(), 'day') || false",
                     'Find all tasks due today or earlier.',
@@ -323,6 +346,49 @@ describe('file properties', () => {
 "    For demonstration purposes, this is slightly imprecise, in that it would also match nested tasks, such as `#context/home/ground-floor`",
 
      */
+
+    it.each(testData)('%s results', (_: string, groups: QueryInstructionLineAndDescription[], tasks: Task[]) => {
+        verifyFunctionFieldFilterSamplesOnTasks(groups, tasks);
+    });
+
+    it.each(testData)('%s docs', (_: string, groups: QueryInstructionLineAndDescription[], _tasks: Task[]) => {
+        verifyFunctionFieldFilterSamplesForDocs(groups);
+    });
+});
+
+describe('obsidian properties', () => {
+    const tasks: Task[] = allCacheSampleData().flatMap((simulatedFile) => {
+        return readTasksFromSimulatedFile(simulatedFile as SimulatedFile);
+    });
+
+    const testData: CustomPropertyDocsTestData[] = [
+        // ---------------------------------------------------------------------------------
+        // PROPERTIES FIELDS
+        // ---------------------------------------------------------------------------------
+
+        [
+            'task.file.frontmatter',
+            [
+                [
+                    "filter by function task.file.hasProperty('kanban-plugin')",
+                    'find tasks in [Kanban Plugin](https://github.com/mgmeyers/obsidian-kanban) boards',
+                ],
+                [
+                    'filter by function task.file.property("sample_list_property")?.length > 0',
+                    "find tasks in files where the list property 'sample_list_property' exists and has at least one list item",
+                ],
+                [
+                    'filter by function task.file.property("sample_list_property")?.length === 0',
+                    "find tasks in files where the list property 'sample_list_property' exists and has no list items",
+                ],
+                [
+                    "filter by function task.file.property('creation date')?.includes('2024') ?? false",
+                    "find tasks in files where the date property 'creation date' includes string '2024'",
+                ],
+            ],
+            tasks,
+        ],
+    ];
 
     it.each(testData)('%s results', (_: string, groups: QueryInstructionLineAndDescription[], tasks: Task[]) => {
         verifyFunctionFieldFilterSamplesOnTasks(groups, tasks);

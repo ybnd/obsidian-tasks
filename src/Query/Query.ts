@@ -1,29 +1,34 @@
-import { expandPlaceholders } from '../Scripting/ExpandPlaceholders';
-import { makeQueryContext } from '../Scripting/QueryContext';
-import { LayoutOptions } from '../TaskLayout';
-import type { Task } from '../Task';
-import type { IQuery } from '../IQuery';
 import { getSettings } from '../Config/Settings';
+import type { IQuery } from '../IQuery';
+import { QueryLayoutOptions } from '../Layout/QueryLayoutOptions';
+import { TaskLayoutComponent, TaskLayoutOptions } from '../Layout/TaskLayoutOptions';
 import { errorMessageForException } from '../lib/ExceptionTools';
 import { logging } from '../lib/logging';
-import { Sort } from './Sort';
-import type { Sorter } from './Sorter';
-import { TaskGroups } from './TaskGroups';
-import * as FilterParser from './FilterParser';
-import type { Grouper } from './Grouper';
+import { expandPlaceholders } from '../Scripting/ExpandPlaceholders';
+import { makeQueryContext } from '../Scripting/QueryContext';
+import type { Task } from '../Task/Task';
+import type { OptionalTasksFile } from '../Scripting/TasksFile';
+import { Explainer } from './Explain/Explainer';
 import type { Filter } from './Filter/Filter';
+import * as FilterParser from './FilterParser';
+import type { Grouper } from './Group/Grouper';
+import { TaskGroups } from './Group/TaskGroups';
 import { QueryResult } from './QueryResult';
-import { scan } from './Scanner';
+import { continueLines } from './Scanner';
 import { SearchInfo } from './SearchInfo';
+import { Sort } from './Sort/Sort';
+import type { Sorter } from './Sort/Sorter';
+import { Statement } from './Statement';
 
 export class Query implements IQuery {
     /** Note: source is the raw source, before expanding any placeholders */
     public readonly source: string;
-    public readonly filePath: string | undefined;
+    public readonly tasksFile: OptionalTasksFile;
 
     private _limit: number | undefined = undefined;
     private _taskGroupLimit: number | undefined = undefined;
-    private _layoutOptions: LayoutOptions = new LayoutOptions();
+    private _taskLayoutOptions: TaskLayoutOptions = new TaskLayoutOptions();
+    private _queryLayoutOptions: QueryLayoutOptions = new QueryLayoutOptions();
     private _filters: Filter[] = [];
     private _error: string | undefined = undefined;
     private _sorting: Sorter[] = [];
@@ -31,8 +36,9 @@ export class Query implements IQuery {
     private _ignoreGlobalQuery: boolean = false;
 
     private readonly hideOptionsRegexp =
-        /^(hide|show) (task count|backlink|priority|created date|start date|scheduled date|done date|due date|recurrence rule|edit button|postpone button|urgency|tags)/i;
+        /^(hide|show) (task count|backlink|priority|cancelled date|created date|start date|scheduled date|done date|due date|recurrence rule|edit button|postpone button|urgency|tags|depends on|id|on completion)/i;
     private readonly shortModeRegexp = /^short/i;
+    private readonly fullModeRegexp = /^full/i;
     private readonly explainQueryRegexp = /^explain/i;
     private readonly ignoreGlobalQueryRegexp = /^ignore global query/i;
 
@@ -44,59 +50,87 @@ export class Query implements IQuery {
 
     private readonly commentRegexp = /^#.*/;
 
-    constructor(source: string, path: string | undefined = undefined) {
+    constructor(source: string, tasksFile: OptionalTasksFile = undefined) {
         this._queryId = this.generateQueryId(10);
 
         this.source = source;
-        this.filePath = path;
+        this.tasksFile = tasksFile;
 
         this.debug(`Creating query: ${this.formatQueryForLogging()}`);
 
-        scan(source).forEach((rawLine: string) => {
-            const line = this.expandPlaceholders(rawLine, path);
+        continueLines(source).forEach((statement: Statement) => {
+            const line = this.expandPlaceholders(statement, tasksFile);
             if (this.error !== undefined) {
                 // There was an error expanding placeholders.
                 return;
             }
 
-            switch (true) {
-                case this.shortModeRegexp.test(line):
-                    this._layoutOptions.shortMode = true;
-                    break;
-                case this.explainQueryRegexp.test(line):
-                    this._layoutOptions.explainQuery = true;
-                    break;
-                case this.ignoreGlobalQueryRegexp.test(line):
-                    this._ignoreGlobalQuery = true;
-                    break;
-                case this.limitRegexp.test(line):
-                    this.parseLimit(line);
-                    break;
-                case this.parseSortBy(line):
-                    break;
-                case this.parseGroupBy(line):
-                    break;
-                case this.hideOptionsRegexp.test(line):
-                    this.parseHideOptions(line);
-                    break;
-                case this.commentRegexp.test(line):
-                    // Comment lines are ignored
-                    break;
-                case this.parseFilter(line):
-                    break;
-                default:
-                    this.setError('do not understand query', line);
+            try {
+                this.parseLine(line, statement);
+            } catch (e) {
+                let message;
+                if (e instanceof Error) {
+                    message = e.message;
+                } else {
+                    message = 'Unknown error';
+                }
+
+                this.setError(message, statement);
+                return;
             }
         });
+    }
+
+    public get filePath(): string | undefined {
+        return this.tasksFile?.path ?? undefined;
+    }
+
+    public get queryId(): string {
+        return this._queryId;
+    }
+
+    private parseLine(line: string, statement: Statement) {
+        switch (true) {
+            case this.shortModeRegexp.test(line):
+                this._queryLayoutOptions.shortMode = true;
+                break;
+            case this.fullModeRegexp.test(line):
+                this._queryLayoutOptions.shortMode = false;
+                break;
+            case this.explainQueryRegexp.test(line):
+                this._queryLayoutOptions.explainQuery = true;
+                break;
+            case this.ignoreGlobalQueryRegexp.test(line):
+                this._ignoreGlobalQuery = true;
+                break;
+            case this.limitRegexp.test(line):
+                this.parseLimit(line);
+                break;
+            case this.parseSortBy(line):
+                break;
+            case this.parseGroupBy(line):
+                break;
+            case this.hideOptionsRegexp.test(line):
+                this.parseHideOptions(line);
+                break;
+            case this.commentRegexp.test(line):
+                // Comment lines are ignored
+                break;
+            case this.parseFilter(line, statement):
+                break;
+            default:
+                this.setError('do not understand query', statement);
+        }
     }
 
     private formatQueryForLogging() {
         return `[${this.source.split('\n').join(' ; ')}]`;
     }
 
-    private expandPlaceholders(source: string, path: string | undefined) {
+    private expandPlaceholders(statement: Statement, tasksFile: OptionalTasksFile) {
+        const source = statement.anyContinuationLinesRemoved;
         if (source.includes('{{') && source.includes('}}')) {
-            if (this.filePath === undefined) {
+            if (this.tasksFile === undefined) {
                 this._error = `The query looks like it contains a placeholder, with "{{" and "}}"
 but no file path has been supplied, so cannot expand placeholder values.
 The query is:
@@ -109,8 +143,8 @@ ${source}`;
         // TODO Show the original and expanded text in explanations
         // TODO Give user error info if they try and put a string in a regex search
         let expandedSource: string = source;
-        if (path) {
-            const queryContext = makeQueryContext(path);
+        if (tasksFile) {
+            const queryContext = makeQueryContext(tasksFile);
             try {
                 expandedSource = expandPlaceholders(source, queryContext);
             } catch (error) {
@@ -122,6 +156,9 @@ ${source}`;
                 return source;
             }
         }
+
+        // Save any expanded text back in to the statement:
+        statement.recordExpandedPlaceholders(expandedSource);
         return expandedSource;
     }
 
@@ -148,7 +185,7 @@ ${source}`;
     public append(q2: Query): Query {
         if (this.source === '') return q2;
         if (q2.source === '') return this;
-        return new Query(`${this.source}\n${q2.source}`, this.filePath);
+        return new Query(`${this.source}\n${q2.source}`, this.tasksFile);
     }
 
     /**
@@ -158,63 +195,24 @@ ${source}`;
      * Use {@link explainResults} if you want to see any global query and global filter as well.
      */
     public explainQuery(): string {
-        let result = '';
-
-        if (this.error !== undefined) {
-            result += 'Query has an error:\n';
-            result += this.error + '\n';
-            return result;
-        }
-
-        const numberOfFilters = this.filters.length;
-        if (numberOfFilters === 0) {
-            result += 'No filters supplied. All tasks will match the query.';
-        } else {
-            for (let i = 0; i < numberOfFilters; i++) {
-                if (i > 0) result += '\n';
-                result += this.filters[i].explainFilterIndented('');
-            }
-        }
-        result += this.explainQueryLimits();
-
-        const { debugSettings } = getSettings();
-        if (debugSettings.ignoreSortInstructions) {
-            result +=
-                "\n\nNOTE: All sort instructions, including default sort order, are disabled, due to 'ignoreSortInstructions' setting.";
-        }
-
-        return result;
-    }
-
-    private explainQueryLimits() {
-        let result = '';
-
-        function getPluralisedText(limit: number) {
-            let text = `\n\nAt most ${limit} task`;
-            if (limit !== 1) {
-                text += 's';
-            }
-            return text;
-        }
-
-        if (this._limit !== undefined) {
-            result += getPluralisedText(this._limit);
-            result += '.\n';
-        }
-
-        if (this._taskGroupLimit !== undefined) {
-            result += getPluralisedText(this._taskGroupLimit);
-            result += ' per group (if any "group by" options are supplied).\n';
-        }
-        return result;
+        const explainer = new Explainer();
+        return explainer.explainQuery(this);
     }
 
     public get limit(): number | undefined {
         return this._limit;
     }
 
-    public get layoutOptions(): LayoutOptions {
-        return this._layoutOptions;
+    public get taskGroupLimit(): number | undefined {
+        return this._taskGroupLimit;
+    }
+
+    get taskLayoutOptions(): TaskLayoutOptions {
+        return this._taskLayoutOptions;
+    }
+
+    public get queryLayoutOptions(): QueryLayoutOptions {
+        return this._queryLayoutOptions;
     }
 
     public get filters(): Filter[] {
@@ -247,9 +245,20 @@ ${source}`;
         return this._error;
     }
 
-    private setError(message: string, line: string) {
-        this._error = `${message}
-Problem line: "${line}"`;
+    private setError(message: string, statement: Statement) {
+        this._error = Query.generateErrorMessage(statement, message);
+    }
+
+    private static generateErrorMessage(statement: Statement, message: string) {
+        if (statement.allLinesIdentical()) {
+            return `${message}
+Problem line: "${statement.rawInstruction}"`;
+        } else {
+            return `${message}
+Problem statement:
+${statement.explainStatement('    ')}
+`;
+        }
     }
 
     public get ignoreGlobalQuery(): boolean {
@@ -259,14 +268,20 @@ Problem line: "${line}"`;
     public applyQueryToTasks(tasks: Task[]): QueryResult {
         this.debug(`Executing query: ${this.formatQueryForLogging()}`);
 
-        const searchInfo = new SearchInfo(this.filePath, tasks);
+        const searchInfo = new SearchInfo(this.tasksFile, tasks);
+
+        // Custom filter (filter by function) does not report the instruction line in any exceptions,
+        // for performance reasons. So we keep track of it here.
+        let possiblyBrokenStatement: Statement | undefined = undefined;
         try {
             this.filters.forEach((filter) => {
+                possiblyBrokenStatement = filter.statement;
                 tasks = tasks.filter((task) => filter.filterFunction(task, searchInfo));
             });
+            possiblyBrokenStatement = undefined;
 
             const { debugSettings } = getSettings();
-            const tasksSorted = debugSettings.ignoreSortInstructions ? tasks : Sort.by(this.sorting, tasks);
+            const tasksSorted = debugSettings.ignoreSortInstructions ? tasks : Sort.by(this.sorting, tasks, searchInfo);
             const tasksSortedLimited = tasksSorted.slice(0, this.limit);
 
             const taskGroups = new TaskGroups(this.grouping, tasksSortedLimited, searchInfo);
@@ -278,7 +293,12 @@ Problem line: "${line}"`;
             return new QueryResult(taskGroups, tasksSorted.length);
         } catch (e) {
             const description = 'Search failed';
-            return QueryResult.fromError(errorMessageForException(description, e));
+            let message = errorMessageForException(description, e);
+
+            if (possiblyBrokenStatement) {
+                message = Query.generateErrorMessage(possiblyBrokenStatement, message);
+            }
+            return QueryResult.fromError(message);
         }
     }
 
@@ -290,57 +310,73 @@ Problem line: "${line}"`;
 
             switch (option) {
                 case 'task count':
-                    this._layoutOptions.hideTaskCount = hide;
+                    this._queryLayoutOptions.hideTaskCount = hide;
                     break;
                 case 'backlink':
-                    this._layoutOptions.hideBacklinks = hide;
+                    this._queryLayoutOptions.hideBacklinks = hide;
                     break;
                 case 'postpone button':
-                    this._layoutOptions.hidePostponeButton = hide;
+                    this._queryLayoutOptions.hidePostponeButton = hide;
                     break;
                 case 'priority':
-                    this._layoutOptions.hidePriority = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.Priority, !hide);
+                    break;
+                case 'cancelled date':
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.CancelledDate, !hide);
                     break;
                 case 'created date':
-                    this._layoutOptions.hideCreatedDate = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.CreatedDate, !hide);
                     break;
                 case 'start date':
-                    this._layoutOptions.hideStartDate = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.StartDate, !hide);
                     break;
                 case 'scheduled date':
-                    this._layoutOptions.hideScheduledDate = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.ScheduledDate, !hide);
                     break;
                 case 'due date':
-                    this._layoutOptions.hideDueDate = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.DueDate, !hide);
                     break;
                 case 'done date':
-                    this._layoutOptions.hideDoneDate = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.DoneDate, !hide);
                     break;
                 case 'recurrence rule':
-                    this._layoutOptions.hideRecurrenceRule = hide;
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.RecurrenceRule, !hide);
                     break;
                 case 'edit button':
-                    this._layoutOptions.hideEditButton = hide;
+                    this._queryLayoutOptions.hideEditButton = hide;
                     break;
                 case 'urgency':
-                    this._layoutOptions.hideUrgency = hide;
+                    this._queryLayoutOptions.hideUrgency = hide;
                     break;
                 case 'tags':
-                    this._layoutOptions.hideTags = hide;
+                    this._taskLayoutOptions.setTagsVisibility(!hide);
+                    break;
+                case 'id':
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.Id, !hide);
+                    break;
+                case 'depends on':
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.DependsOn, !hide);
+                    break;
+                case 'on completion':
+                    this._taskLayoutOptions.setVisibility(TaskLayoutComponent.OnCompletion, !hide);
                     break;
                 default:
-                    this.setError('do not understand hide/show option', line);
+                    this.setError('do not understand hide/show option', new Statement(line, line));
             }
         }
     }
 
-    private parseFilter(line: string) {
+    private parseFilter(line: string, statement: Statement) {
         const filterOrError = FilterParser.parseFilter(line);
         if (filterOrError != null) {
             if (filterOrError.filter) {
+                // Overwrite the filter's statement, to preserve details of any
+                // continuation lines and placeholder expansions.
+                filterOrError.filter.setStatement(statement);
+
                 this._filters.push(filterOrError.filter);
             } else {
-                this.setError(filterOrError.error ?? 'Unknown error', line);
+                this.setError(filterOrError.error ?? 'Unknown error', statement);
             }
             return true;
         }
@@ -350,7 +386,7 @@ Problem line: "${line}"`;
     private parseLimit(line: string): void {
         const limitMatch = line.match(this.limitRegexp);
         if (limitMatch === null) {
-            this.setError('do not understand query limit', line);
+            this.setError('do not understand query limit', new Statement(line, line));
             return;
         }
 

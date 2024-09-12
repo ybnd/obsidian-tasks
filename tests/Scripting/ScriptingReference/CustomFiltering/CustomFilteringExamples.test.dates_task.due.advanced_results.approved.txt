@@ -2,6 +2,16 @@ Results of custom filters
 
 
 
+filter by function \
+    const date = task.due.moment; \
+    return date ? !date.isValid() : false;
+Like `due date is invalid`.
+It matches tasks that have a due date and the due date is invalid, such as `2022-13-32`
+=>
+- [ ] my description 📅 Invalid date
+====================================================================================
+
+
 filter by function task.due.moment?.isSameOrBefore(moment(), 'day') || false
 Find all tasks due today or earlier.
 `moment()` returns the current date and time, which we need to convert to the start of the day.
@@ -11,6 +21,7 @@ See the documentation of [isSameOrBefore](https://momentjscom.readthedocs.io/en/
 - [ ] my description 📅 2023-05-30
 - [ ] my description 📅 2023-05-31
 - [ ] my description 📅 2023-06-01
+- [ ] my description 📅 2023-06-02
 ====================================================================================
 
 
@@ -34,5 +45,6 @@ Find all tasks due in the week of 31 May 2023.
 - [ ] my description 📅 2023-05-30
 - [ ] my description 📅 2023-05-31
 - [ ] my description 📅 2023-06-01
+- [ ] my description 📅 2023-06-02
 ====================================================================================
 
