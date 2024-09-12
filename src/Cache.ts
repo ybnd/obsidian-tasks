@@ -426,7 +426,7 @@ session.
                 );
 
                 if (heading.heading != converted_headings_cache.get(heading.heading)) {
-                    console.log(
+                    console.debug(
                         `Tasks plugin: transformed heading '${heading.heading}' → '${converted_headings_cache.get(
                             heading.heading,
                         )}'`,
