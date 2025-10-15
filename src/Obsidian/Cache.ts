@@ -488,13 +488,13 @@ session.
                         .trim(),
                 );
 
-                if (heading.heading != converted_headings_cache.get(heading.heading)) {
-                    console.debug(
-                        `Tasks plugin: transformed heading '${heading.heading}' → '${converted_headings_cache.get(
-                            heading.heading,
-                        )}'`,
-                    );
-                }
+                // if (heading.heading != converted_headings_cache.get(heading.heading)) {
+                //     console.debug(
+                //         `Tasks plugin: transformed heading '${heading.heading}' → '${converted_headings_cache.get(
+                //             heading.heading,
+                //         )}'`,
+                //     );
+                // }
             }
 
             precedingHeader = converted_headings_cache.get(heading.heading);
