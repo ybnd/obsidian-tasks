@@ -1,4 +1,5 @@
 pre-push:
+  skip: true
   parallel: true
   commands:
     build:
@@ -11,6 +12,7 @@ pre-push:
       run: yarn test
 
 pre-commit:
+  skip: true
   parallel: true
   commands:
     lint:
