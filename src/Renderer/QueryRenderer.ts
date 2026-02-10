@@ -171,6 +171,7 @@ async function backlinksClickHandler(ev: MouseEvent, task: Task) {
         // (which would interfere e.g. if the query is rendered inside a callout).
         ev.preventDefault();
         // Instead of the default behavior, open the file with the required line highlighted.
+        hacky_lines_stash(file, line);
         await leaf.openFile(file, { eState: { line: line } });
     }
 }
@@ -187,7 +188,22 @@ async function backlinksMousedownHandler(ev: MouseEvent, task: Task) {
             const [line, file] = result;
             const leaf = app.workspace.getLeaf('tab');
             ev.preventDefault();
+            hacky_lines_stash(file, line);
             await leaf.openFile(file, { eState: { line: line } });
         }
     }
+}
+
+/**
+ * Keep a sneaky cache of file→line that we can pick up when the view mode hits (because they don't persist when changing mode)
+ */
+function hacky_lines_stash(file: any, line: number) {
+    const hack = app as any;
+    if (hack.__hacky_lines === undefined) {
+        hack.__hacky_lines = {};
+    }
+    hack.__hacky_lines[file.path] = line;
+    setTimeout(() => {
+        hack.__hacky_lines[file] = undefined;
+    }, 5000);
 }
